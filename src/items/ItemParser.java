@@ -48,9 +48,7 @@ public class ItemParser {
         this.item = new Item(id);
 
         try {
-            Log.sLog("Start get web page");
             HtmlPage page = (HtmlPage) client.getPage(Config.ARTIFACT_URL + this.item.getId());
-            Log.sLog("End get web page");
 
             if (page.asText().isEmpty()) {
                 return false;
@@ -58,15 +56,14 @@ public class ItemParser {
 
             boolean parsingResult;
 
-            Log.sLog("Start parsing");
             parsingResult = this.getItemName(page);
             if (parsingResult) {
                 this.getItemImage(page);
                 this.getItemTopInfo(page);
                 this.getItemBottomInfo(page);
             }
-            Log.sLog("End parsing");
         } catch (HttpHostConnectException e) {
+            Log.sLog("Error while parsing");
             return false;
         }
         return true;
@@ -221,7 +218,15 @@ public class ItemParser {
             String conditionName = conditionNameBold.asText();
             String conditionValue = conditionValueBold.asText().replace("+", "");
 
-            this.item.addCondition(conditionName, Integer.parseInt(conditionValue));
+            if(conditionName.matches(".*(У|у)рон")){
+                String[] damage = conditionValue.split(" .. ");
+                damage[0] = new String(damage[0]).replace("+","");
+                damage[1] = new String(damage[1]).replace("+","");
+                this.item.addCondition(conditionName + " минимальный ", Float.parseFloat(damage[0]));
+                this.item.addCondition(conditionName + " максимальный ", Float.parseFloat(damage[1]));
+            }else {
+                this.item.addCondition(conditionName, Float.parseFloat(conditionValue));
+            }
         }
     }
 

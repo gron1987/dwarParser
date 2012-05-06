@@ -27,7 +27,7 @@ public class Item {
     private boolean              notTransferable = false;
     private Map<String, Integer> strength        = new HashMap<String, Integer>();
     private List<String>         magicType       = new ArrayList<String>();
-    private Map<String, Integer> conditions      = new HashMap<String, Integer>();
+    private Map<String, Float> conditions      = new HashMap<String, Float>();
     private List<String>         additionalInfo  = new ArrayList<String>();
 
     public Item(int id) {
@@ -50,7 +50,7 @@ public class Item {
         this.magicType.add(magicType);
     }
 
-    public void addCondition(String type, Integer value) {
+    public void addCondition(String type, Float value) {
         this.conditions.put(type, value);
     }
 
@@ -154,11 +154,11 @@ public class Item {
         this.magicType = magicType;
     }
 
-    public Map<String, Integer> getConditions() {
+    public Map<String, Float> getConditions() {
         return conditions;
     }
 
-    public void setConditions(Map<String, Integer> conditions) {
+    public void setConditions(Map<String, Float> conditions) {
         this.conditions = conditions;
     }
 
