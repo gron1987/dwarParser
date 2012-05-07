@@ -44,8 +44,6 @@ public class ParserCallable implements Callable {
             return item;
         }
 
-        Log.sLog("End parse item " + Integer.toString(id));
-
         return item;
     }
 }

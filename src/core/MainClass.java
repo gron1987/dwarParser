@@ -54,6 +54,7 @@ public class MainClass {
         ItemParser parser = new ItemParser();
         try {
             Item item = parser.start(id);
+            Log.sLog("End process.");
         } catch (HttpHostConnectException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -70,7 +71,7 @@ public class MainClass {
      * @param end
      */
     private static void parseItemsBetween(int start, int end) {
-        ExecutorService executor = Executors.newFixedThreadPool(end - start);
+        ExecutorService executor = Executors.newFixedThreadPool(10);
         Set<Future<Item>> itemsFuture = new HashSet<Future<Item>>();
         List<Item> items = new ArrayList<Item>();
         for (int i = start; i <= end; ++i) {
@@ -81,14 +82,16 @@ public class MainClass {
         for (Future<Item> item : itemsFuture) {
             try {
                 Item parsedItem = item.get();
-                if(parsedItem != null){
+                if (parsedItem != null) {
                     items.add(parsedItem);
                 }
             } catch (InterruptedException e) {
+                e.printStackTrace();
             } catch (ExecutionException e) {
+                e.printStackTrace();
             }
         }
-        Log.sLog("End work get " + items.size() + " elements " );
+        Log.sLog("End work get " + items.size() + " elements ");
     }
 
     public static void main(String[] args) {
@@ -98,8 +101,8 @@ public class MainClass {
                 MainClass.parseOneItem(Integer.parseInt(args[0]));
             } else if (args.length == 2) {
                 MainClass.parseItemsBetween(
-                        Integer.parseInt(args[0]),
-                        Integer.parseInt(args[1])
+                    Integer.parseInt(args[0]),
+                    Integer.parseInt(args[1])
                 );
             }
         }
