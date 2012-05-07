@@ -4,8 +4,8 @@ import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
 import core.Config;
-import core.Log;
 import etc.Price;
+import org.apache.http.ParseException;
 import org.apache.http.conn.HttpHostConnectException;
 
 import java.io.IOException;
@@ -42,31 +42,26 @@ public class ItemParser {
         return webClient;
     }
 
-    public boolean start(int id) throws IOException {
+    public Item start(int id) throws IOException, ParseException, HttpHostConnectException {
         WebClient client = this._createWebClient();
 
         this.item = new Item(id);
 
-        try {
-            HtmlPage page = (HtmlPage) client.getPage(Config.ARTIFACT_URL + this.item.getId());
+        HtmlPage page = (HtmlPage) client.getPage(Config.ARTIFACT_URL + this.item.getId());
 
-            if (page.asText().isEmpty()) {
-                return false;
-            }
-
-            boolean parsingResult;
-
-            parsingResult = this.getItemName(page);
-            if (parsingResult) {
-                this.getItemImage(page);
-                this.getItemTopInfo(page);
-                this.getItemBottomInfo(page);
-            }
-        } catch (HttpHostConnectException e) {
-            Log.sLog("Error while parsing");
-            return false;
+        if (page.asText().isEmpty()) {
+            throw new ParseException("Empty page");
         }
-        return true;
+
+        boolean parsingResult;
+
+        parsingResult = this.getItemName(page);
+        if (parsingResult) {
+            this.getItemImage(page);
+            this.getItemTopInfo(page);
+            this.getItemBottomInfo(page);
+        }
+        return this.item;
     }
 
     /**
@@ -218,14 +213,22 @@ public class ItemParser {
             String conditionName = conditionNameBold.asText();
             String conditionValue = conditionValueBold.asText().replace("+", "");
 
-            if(conditionName.matches(".*(У|у)рон")){
+            if (conditionName.matches(".*(У|у)рон")) {
                 String[] damage = conditionValue.split(" .. ");
-                damage[0] = new String(damage[0]).replace("+","");
-                damage[1] = new String(damage[1]).replace("+","");
+                damage[0] = new String(damage[0]).replace("+", "");
+                damage[1] = new String(damage[1]).replace("+", "");
                 this.item.addCondition(conditionName + " минимальный ", Float.parseFloat(damage[0]));
                 this.item.addCondition(conditionName + " максимальный ", Float.parseFloat(damage[1]));
-            }else {
+            } else {
                 this.item.addCondition(conditionName, Float.parseFloat(conditionValue));
+            }
+        } else if (bs.size() == 0) {
+            List<?> tds = row.getElementsByTagName("td");
+            HtmlTableCell conditionTdName = (HtmlTableCell) tds.get(0);
+            HtmlTableCell conditionTdValue = (HtmlTableCell) tds.get(1);
+
+            if (conditionTdName.asText().matches("Время жизни")) {
+                this.item.setLifeTime(conditionTdValue.asText());
             }
         }
     }
