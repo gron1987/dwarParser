@@ -24,7 +24,8 @@ public class ParserCallable implements Callable {
     public Item call() {
         Random generator = new Random();
         try {
-            Thread.sleep(generator.nextInt(2000));
+            int sleepTime = generator.nextInt(2000);
+            Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

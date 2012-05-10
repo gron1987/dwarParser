@@ -1,12 +1,16 @@
 package core;
 
 import items.Item;
+import items.ItemMapper;
 import items.ItemParser;
 import items.ParserCallable;
 import org.apache.http.ParseException;
 import org.apache.http.conn.HttpHostConnectException;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +19,9 @@ import java.util.concurrent.*;
 
 public class MainClass {
     final static boolean DEBUG = true;
+
+    private static Connection connection;
+    private static ItemMapper itemMapper;
 
     /**
      * Check input arguments
@@ -52,8 +59,9 @@ public class MainClass {
      */
     private static void parseOneItem(int id) {
         ItemParser parser = new ItemParser();
+        Item item = null;
         try {
-            Item item = parser.start(id);
+            item = parser.start(id);
             Log.sLog("End process.");
         } catch (HttpHostConnectException e) {
             e.printStackTrace();
@@ -61,6 +69,10 @@ public class MainClass {
             e.printStackTrace();
         } catch (ParseException e) {
             Log.sLog("End process, empty page for item " + Integer.toString(id));
+        }
+
+        if(item != null){
+            MainClass.saveItemToDB(item);
         }
     }
 
@@ -79,11 +91,16 @@ public class MainClass {
             Future<Item> itemFuture = executor.submit(c);
             itemsFuture.add(itemFuture);
         }
+        int addedItems = 0;
         for (Future<Item> item : itemsFuture) {
             try {
                 Item parsedItem = item.get();
                 if (parsedItem != null) {
-                    items.add(parsedItem);
+                    // add Item to DB
+                    if(item != null){
+                        MainClass.saveItemToDB(parsedItem);
+                        ++addedItems;
+                    }
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
@@ -91,8 +108,40 @@ public class MainClass {
                 e.printStackTrace();
             }
         }
-        Log.sLog("End work get " + items.size() + " elements ");
+        executor.shutdown();
+        Log.sLog("End work get " + Integer.toString(addedItems) + " elements ");
     }
+
+    /**
+     * Save item to DB
+     *
+     * @param item
+     */
+    private static void saveItemToDB(Item item){
+        if(connection == null){
+            try {
+                Class.forName("com.mysql.jdbc.Driver").newInstance();
+                connection = DriverManager.getConnection("jdbc:mysql://localhost/test?user=root&password=&useUnicode=true&characterEncoding=utf-8");
+                connection.setAutoCommit(false);
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if(itemMapper == null){
+            itemMapper = new ItemMapper();
+            itemMapper.setConnection(connection);
+        }
+
+        itemMapper.add(item);
+    }
+
 
     public static void main(String[] args) {
         if (MainClass.checkInputArguments(args)) {
@@ -104,6 +153,14 @@ public class MainClass {
                     Integer.parseInt(args[0]),
                     Integer.parseInt(args[1])
                 );
+            }
+        }
+
+        if(connection != null){
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
         }
     }

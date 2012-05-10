@@ -20,14 +20,15 @@ public class Item {
     private String color;
     private String img;
     private String type;
-    private int    minLevel;
+    private int minLevel = 0;
+    private int maxLevel = 99;
     private Price  price;
     private String fightType;
     private String lifeTime;
     private boolean              notTransferable = false;
     private Map<String, Integer> strength        = new HashMap<String, Integer>();
     private List<String>         magicType       = new ArrayList<String>();
-    private Map<String, Float> conditions      = new HashMap<String, Float>();
+    private Map<String, Float>   conditions      = new HashMap<String, Float>();
     private List<String>         additionalInfo  = new ArrayList<String>();
 
     public Item(int id) {
@@ -55,9 +56,9 @@ public class Item {
     }
 
     public void addAdditionalInfo(String info) {
-        if(!info.contains("Предмет нельзя передать!")){
+        if (!info.contains("Предмет нельзя передать!")) {
             this.additionalInfo.add(info);
-        }else{
+        } else {
             this.notTransferable = true;
         }
     }
@@ -172,5 +173,13 @@ public class Item {
 
     public void setAdditionalInfo(List<String> additionalInfo) {
         this.additionalInfo = additionalInfo;
+    }
+
+    public int getMaxLevel() {
+        return maxLevel;
+    }
+
+    public void setMaxLevel(int maxLevel) {
+        this.maxLevel = maxLevel;
     }
 }

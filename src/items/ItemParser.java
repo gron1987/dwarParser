@@ -4,6 +4,7 @@ import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.*;
 import core.Config;
+import core.Log;
 import etc.Price;
 import org.apache.http.ParseException;
 import org.apache.http.conn.HttpHostConnectException;
@@ -26,6 +27,7 @@ public class ItemParser {
     public static final String ITEM_FIGHT_STYLE_TD_TITLE   = "Стиль боя";
     public static final String ITEM_MINIMUM_LEVEL_TD_TITLE = "Требуемый уровень";
     public static final String ITEM_PRICE_TD_TITLE         = "Цена";
+    public static final String ITEM_MAGIC_STYLE_ID_TITLE   = "Школа магии";
     public static final String ITEM_LEVEL_REGEXP           = "Уровень ";
 
     private Item item;
@@ -45,7 +47,7 @@ public class ItemParser {
     public Item start(int id) throws IOException, ParseException, HttpHostConnectException {
         WebClient client = this._createWebClient();
 
-        this.item = new Item(id);
+        item = new Item(id);
 
         HtmlPage page = (HtmlPage) client.getPage(Config.ARTIFACT_URL + this.item.getId());
 
@@ -55,13 +57,13 @@ public class ItemParser {
 
         boolean parsingResult;
 
-        parsingResult = this.getItemName(page);
+        parsingResult = getItemName(page);
         if (parsingResult) {
-            this.getItemImage(page);
-            this.getItemTopInfo(page);
-            this.getItemBottomInfo(page);
+            getItemImage(page);
+            getItemTopInfo(page);
+            getItemBottomInfo(page);
         }
-        return this.item;
+        return item;
     }
 
     /**
@@ -76,10 +78,10 @@ public class ItemParser {
         try {
             HtmlTable tableItemName = (HtmlTable) tables.get(0);
             HtmlBold boldItemName = (HtmlBold) tableItemName.getByXPath("//h1/b").get(0);
-            this.item.setTitle(boldItemName.asText());
+            item.setTitle(boldItemName.asText());
 
             String color = boldItemName.getAttribute("style").replaceAll("color:", "");
-            this.item.setColor(color);
+            item.setColor(color);
         } catch (IndexOutOfBoundsException e) {
             return false;
         }
@@ -97,7 +99,7 @@ public class ItemParser {
 
         try {
             HtmlTable tableItemImage = (HtmlTable) tables.get(0);
-            this.item.setImg(Config.PROJECT_URL + tableItemImage.getAttribute("background"));
+            item.setImg(Config.PROJECT_URL + tableItemImage.getAttribute("background"));
         } catch (IndexOutOfBoundsException e) {
             return false;
         }
@@ -117,20 +119,37 @@ public class ItemParser {
             for (HtmlTableDataCell td : (List<HtmlTableDataCell>) tables) {
                 String tdTitle = td.getAttribute("title");
                 if (tdTitle.equalsIgnoreCase(ITEM_TYPE_TD_TITLE)) {
-                    this.item.setType(td.asText());
+                    item.setType(td.asText());
                 } else if (tdTitle.equalsIgnoreCase(ITEM_STRENGTH_TD_TITLE)) {
                     String strengthText = td.asText();
                     String[] strength = strengthText.split("/");
                     if (strength.length == 2) {
-                        this.item.addMinimumStrength(Integer.parseInt(strength[0]));
-                        this.item.addMaximumStrength(Integer.parseInt(strength[1]));
+                        item.addMinimumStrength(Integer.parseInt(strength[0]));
+                        item.addMaximumStrength(Integer.parseInt(strength[1]));
                     }
                 } else if (tdTitle.equalsIgnoreCase(ITEM_FIGHT_STYLE_TD_TITLE)) {
-                    this.item.setFightType(td.asText());
+                    item.setFightType(td.asText());
                 } else if (tdTitle.equalsIgnoreCase(ITEM_MINIMUM_LEVEL_TD_TITLE)) {
-                    this.item.setMinLevel(Integer.parseInt(td.asText().replace(ITEM_LEVEL_REGEXP, "")));
+                    try {
+                        String levelText = td.asText().replace(ITEM_LEVEL_REGEXP, "");
+                        if (levelText.indexOf("-") > 0) {
+                            String[] levels = levelText.split("-");
+                            item.setMinLevel(Integer.parseInt(levels[0]));
+                            item.setMaxLevel(Integer.parseInt(levels[1]));
+                        } else {
+                            item.setMinLevel(Integer.parseInt(levelText));
+                        }
+                    } catch (NumberFormatException e) {
+                        Log.sLog("Error in item level ID:" + item.getId());
+                        e.printStackTrace();
+                    }
                 } else if (tdTitle.equalsIgnoreCase(ITEM_PRICE_TD_TITLE)) {
-                    this.getPriceFromTd(td);
+                    getPriceFromTd(td);
+                } else if (tdTitle.equalsIgnoreCase(ITEM_MAGIC_STYLE_ID_TITLE)) {
+                    String[] magicStyles = td.asText().split(" ");
+                    for(String style : magicStyles){
+                        item.addMagicType(style);
+                    }
                 }
             }
         } catch (IndexOutOfBoundsException e) {
@@ -166,7 +185,7 @@ public class ItemParser {
             ++i;
         }
 
-        this.item.setPrice(new Price(prices));
+        item.setPrice(new Price(prices));
     }
 
     /**
@@ -185,9 +204,9 @@ public class ItemParser {
                     // if we had 1 TD element - this is additional info. 2 TD elements - condition.
                     int tdCount = row.getElementsByTagName("td").size();
                     if (tdCount == 2) {
-                        this.getConditionsFromRow(row);
+                        getConditionsFromRow(row);
                     } else if (tdCount == 1) {
-                        this.getAdditionalInfoFromRow(row);
+                        getAdditionalInfoFromRow(row);
                     }
                 } catch (IndexOutOfBoundsException e) {
                     continue;
@@ -217,10 +236,10 @@ public class ItemParser {
                 String[] damage = conditionValue.split(" .. ");
                 damage[0] = new String(damage[0]).replace("+", "");
                 damage[1] = new String(damage[1]).replace("+", "");
-                this.item.addCondition(conditionName + " минимальный ", Float.parseFloat(damage[0]));
-                this.item.addCondition(conditionName + " максимальный ", Float.parseFloat(damage[1]));
+                item.addCondition(conditionName + " минимальный ", Float.parseFloat(damage[0]));
+                item.addCondition(conditionName + " максимальный ", Float.parseFloat(damage[1]));
             } else {
-                this.item.addCondition(conditionName, Float.parseFloat(conditionValue));
+                item.addCondition(conditionName, Float.parseFloat(conditionValue));
             }
         } else if (bs.size() == 0) {
             List<?> tds = row.getElementsByTagName("td");
@@ -228,7 +247,7 @@ public class ItemParser {
             HtmlTableCell conditionTdValue = (HtmlTableCell) tds.get(1);
 
             if (conditionTdName.asText().matches("Время жизни")) {
-                this.item.setLifeTime(conditionTdValue.asText());
+                item.setLifeTime(conditionTdValue.asText());
             }
         }
     }
@@ -241,6 +260,6 @@ public class ItemParser {
      */
     private void getAdditionalInfoFromRow(HtmlTableRow row) throws IndexOutOfBoundsException {
         HtmlTableCell cell = (HtmlTableCell) row.getElementsByTagName("td").get(0);
-        this.item.addAdditionalInfo(cell.asXml());
+        item.addAdditionalInfo(cell.asXml());
     }
 }
