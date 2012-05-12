@@ -1,5 +1,7 @@
 package items;
 
+import core.Log;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -74,6 +76,7 @@ public class ItemMapper {
         } catch (Exception e) {
             try {
                 connection.rollback();
+                Log.sLog("Rollback for item " + item.getId());
             } catch (SQLException e1) {
                 e1.printStackTrace();
             }

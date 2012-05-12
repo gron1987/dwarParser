@@ -121,7 +121,11 @@ public class MainClass {
         if(connection == null){
             try {
                 Class.forName("com.mysql.jdbc.Driver").newInstance();
-                connection = DriverManager.getConnection("jdbc:mysql://localhost/test?user=root&password=&useUnicode=true&characterEncoding=utf-8");
+                connection = DriverManager.getConnection("jdbc:mysql://" + Config.DB_HOST +
+                        "/" + Config.DB_TABLE +
+                        "?user=" + Config.DB_USERNAME +
+                        "&password=" + Config.DB_PASSWORD +
+                        "&useUnicode=true&characterEncoding=utf-8");
                 connection.setAutoCommit(false);
             } catch (InstantiationException e) {
                 e.printStackTrace();

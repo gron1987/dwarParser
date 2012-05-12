@@ -171,7 +171,7 @@ public class ItemParser {
         }
         // get currencies array
         List<String> currencyArray = new ArrayList<String>();
-        List<?> spans = td.getByXPath("//span");
+        List<?> spans = td.getElementsByTagName("span");
         for (HtmlSpan span : (List<HtmlSpan>) spans) {
             if (span.getAttribute("title").length() > 0) {
                 currencyArray.add(span.getAttribute("title"));
