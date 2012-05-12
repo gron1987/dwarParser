@@ -57,9 +57,9 @@ public class Item {
 
     public void addAdditionalInfo(String info) {
         if (!info.contains("Предмет нельзя передать!")) {
-            this.additionalInfo.add(info);
+            additionalInfo.add(info);
         } else {
-            this.notTransferable = true;
+            notTransferable = true;
         }
     }
 

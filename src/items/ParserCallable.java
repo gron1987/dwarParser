@@ -15,6 +15,9 @@ import java.util.concurrent.Callable;
  * Time: 12:01 AM
  */
 public class ParserCallable implements Callable {
+
+    public static final int MAXIMUM_TIMEOUT = 2000;
+
     private int id;
 
     public ParserCallable(int id) {
@@ -24,7 +27,7 @@ public class ParserCallable implements Callable {
     public Item call() {
         Random generator = new Random();
         try {
-            int sleepTime = generator.nextInt(2000);
+            int sleepTime = generator.nextInt(MAXIMUM_TIMEOUT);
             Thread.sleep(sleepTime);
         } catch (InterruptedException e) {
             e.printStackTrace();

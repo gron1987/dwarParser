@@ -45,11 +45,11 @@ public class ItemParser {
     }
 
     public Item start(int id) throws IOException, ParseException, HttpHostConnectException {
-        WebClient client = this._createWebClient();
+        WebClient client = _createWebClient();
 
         item = new Item(id);
 
-        HtmlPage page = (HtmlPage) client.getPage(Config.ARTIFACT_URL + this.item.getId());
+        HtmlPage page = (HtmlPage) client.getPage(Config.ARTIFACT_URL + item.getId());
 
         if (page.asText().isEmpty()) {
             throw new ParseException("Empty page");
